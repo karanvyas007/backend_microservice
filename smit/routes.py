@@ -2,6 +2,7 @@ from smit import app
 from flask import render_template,request
 import socket
 from flask import jsonify
+from smit.models import Items
 
 
 @app.route('/main')
@@ -17,9 +18,13 @@ def Fetch():
 @app.route('/health',methods=['GET','POST'])
 def health():
     hostname,hostip=Fetch()
-    return render_template("main.html", HOSTNAME=hostname,HOSTIP=hostip)
+    return jsonify( HOSTNAME=hostname,HOSTIP=hostip)
+
 
 
 @app.route('/test_t',methods=['GET','POST'])
 def test_t():
-    return "ok"
+    from smit.models import Items
+    data = request.get_json()
+    print(data)
+    return jsonify(show_data=data)
