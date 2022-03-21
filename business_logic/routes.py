@@ -1,16 +1,12 @@
-import datetime
 import json
 import socket
 
-import jwt
-from flask import jsonify, make_response
+from flask import jsonify
 from flask import request
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import jwt_required
 
 from business_logic import app
+from business_logic import db
 from business_logic.authorization.authorize import Autorization
-from business_logic.models.models import Registration
 
 
 @app.route('/main')
@@ -79,12 +75,13 @@ def register():
 
 
 @app.route('/login', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def login():
     """
 
     :return:
     """
+    from business_logic.models.models import Registration
     return_response = {"status": False, "message": "Error occurred"}
     try:
         if request.method == "POST":
@@ -93,39 +90,32 @@ def login():
             username = data.get('username')
             password = data.get('password')
             print(username)
-            # print(password)
+            print(password)
             user = Registration.query.filter_by(username=username).first()
             if user:
                 if password == user.password:
-                    return_response = {"status": True, "message": "Logged in successfully"}
+                    return_response = {"status": True, "message": "Logged in sucessfully", "flag": "1"}
+                    return return_response
                 else:
-                    return_response = {"status": False, "message": "Please enter a valid password"}
+                    return_response = {"status": "False", "message": "please enter valid password", "flag": "0"}
+                    return return_response
             else:
-                return_response = {"status": "False", "message": "User does not exist."}
-    except:
-        return_response = {"status": False, "message": "Exception occurred."}
+                return_response = {"status": "False", "message": "Please enter valid input"}
+                return return_response
+    except Exception as e1:
+        return_response["message"] = "Exception occurred", str(e1)
+    return_response
 
-    return json.dumps(return_response)
 
+@app.route('/delete/<int:Sno>')
+def delete(Sno):
+    return_response = {"status": "True", "message": "Account Deleted"}
+    try:
+        from business_logic.models.models import Registration
+        del_user = Registration.query.filter_by(Sno=Sno).first()
+        db.session.delete(del_user)
+        db.session.commit()
+    except Exception as d1:
+        return_response = {"message": "Error Occured in Delete"}
+    return return_response
 
-# @app.route('/auth', methods=['GET'])
-# def authentication():
-#     auth = request.authentication
-#     if auth and auth.password == 'admin@1234':
-#         token = jwt.encode(
-#             {'user': auth.username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=45)},
-#             app.config['SECRET_KEY'])
-#         # return jsonify({'token':token.decode('utf-8')})
-#         return jsonify({'token': token})
-#     else:
-#         return make_response('could not verify', 401, {'Authentication': 'login required"'})
-#
-#
-# @app.route('/auth2', methods=['POST'])
-# def auth_fn():
-#     username = request.json.get("username")
-#     password = request.json.get("password")
-#     if username == "admin@gmail.com" or password == "admin":
-#         access_token = create_access_token(identity=username)
-#         return jsonify(access_token=access_token)
-#     return jsonify({"msg": "Bad username or password"}), 401
