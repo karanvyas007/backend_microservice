@@ -1,4 +1,4 @@
-from smit import app
+from business_logic import app
 
 
 if __name__ == '__main__':
