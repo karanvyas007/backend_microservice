@@ -1,15 +1,16 @@
+import datetime
 import json
 import socket
-from flask import jsonify,make_response
-from flask import request
-from business_logic import app
-import jwt
-from flask_jwt import jwt_required
-import datetime
-from functools import wraps
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import create_access_token
 
+import jwt
+from flask import jsonify, make_response
+from flask import request
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import jwt_required
+
+from business_logic import app
+from business_logic.authorization.authorize import Autorization
+from business_logic.models.models import Registration
 
 
 @app.route('/main')
@@ -32,7 +33,7 @@ def health():
 
 @app.route('/items', methods=['GET', 'POST'])
 def items():
-    from business_logic.models.models import Items,Registration
+    from business_logic.models.models import Items
     data1 = Items.query.all()
     data_list = []
     for i in data1:
@@ -50,6 +51,7 @@ def register():
     :return:
     all the data
     """
+    response = {"status": "False", "message": "Error occurred"}
     try:
         data = request.get_json()
         print(data)
@@ -58,66 +60,72 @@ def register():
         print(data.get('username'))
         register_data = Registration(fullname=data.get('fullname'), username=data.get('username')
                                      , email=data.get('email'), password=data.get('password'), ph_no=data.get('ph_no'))
-
         print(register_data.email)
         print(register_data.password)
         print(register_data.ph_no)
         print(register_data.fullname)
         db.session.add(register_data)
         db.session.commit()
-        record=Registration.query.filter_by(username=register_data.email)
+        # record = Registration.query.filter_by(username=register_data.email)
+        # if record is not None:
         # print(data['username']) #aa riete bi data get kari sakay
-        responce = {"status": "True", "message": "data stored successfully",}
-        return responce
-    except:
-        responce = {"status": "False", "message": "data do not stored successfully"}
-        return responce
+        auth_obj = Autorization()
+        token = auth_obj.generate_token(username=register_data.email)
+        if token is not None:
+            response = {"status": "True", "message": "data stored successfully", "token": token}
+    except Exception as e1:
+        response["message"] = "Exception occurred", str(e1)
+    return response
 
 
 @app.route('/login', methods=['POST'])
+@jwt_required()
 def login():
+    """
+
+    :return:
+    """
+    return_response = {"status": False, "message": "Error occurred"}
     try:
-        from business_logic.models import Registration
         if request.method == "POST":
             data = request.get_json()
             print(data)
             username = data.get('username')
             password = data.get('password')
             print(username)
-            print(password)
+            # print(password)
             user = Registration.query.filter_by(username=username).first()
             if user:
                 if password == user.password:
-                    response = {"status":  True , "message": "Logged in sucessfully","flag": "1"}
-                    return response
+                    return_response = {"status": True, "message": "Logged in successfully"}
                 else:
-                    response = {"status": "False", "message": "please enter valid password","flag": "0"}
-                    return response
+                    return_response = {"status": False, "message": "Please enter a valid password"}
             else:
-                response = {"status": "False", "message": "Please enter valid input"}
-                return response
+                return_response = {"status": "False", "message": "User does not exist."}
     except:
-        response = {"status": "404", "message": "enter valid input"}
-        return response
+        return_response = {"status": False, "message": "Exception occurred."}
 
-@app.route('/auth',methods=['GET'])
-def authentication():
-    auth = request.authentication
-    if auth and auth.password == 'admin@1234':
-        token = jwt.encode(
-            {'user': auth.username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=45)},
-            app.config['SECRET_KEY'])
-        # return jsonify({'token':token.decode('utf-8')})
-        return jsonify({'token': token})
-    else:
-        return make_response('coul-d not verify', 401, {'Authentication': 'login required"'})
+    return json.dumps(return_response)
 
-@app.route('/auth2', methods=['POST'])
-def auth_fn():
-    username = request.json.get("username")
-    password = request.json.get("password")
-    if username == "admin@gmail.com" or password == "admin":
-        access_token = create_access_token(identity=username)
-        return jsonify(access_token=access_token)
-    return jsonify({"msg": "Bad username or password"}), 401
 
+# @app.route('/auth', methods=['GET'])
+# def authentication():
+#     auth = request.authentication
+#     if auth and auth.password == 'admin@1234':
+#         token = jwt.encode(
+#             {'user': auth.username, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=45)},
+#             app.config['SECRET_KEY'])
+#         # return jsonify({'token':token.decode('utf-8')})
+#         return jsonify({'token': token})
+#     else:
+#         return make_response('could not verify', 401, {'Authentication': 'login required"'})
+#
+#
+# @app.route('/auth2', methods=['POST'])
+# def auth_fn():
+#     username = request.json.get("username")
+#     password = request.json.get("password")
+#     if username == "admin@gmail.com" or password == "admin":
+#         access_token = create_access_token(identity=username)
+#         return jsonify(access_token=access_token)
+#     return jsonify({"msg": "Bad username or password"}), 401
