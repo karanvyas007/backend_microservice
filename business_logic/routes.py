@@ -1,5 +1,4 @@
 import json
-import socket
 
 from flask import jsonify
 from flask import request
@@ -7,6 +6,8 @@ from flask import request
 from business_logic import app
 from business_logic import db
 from business_logic.authorization.authorize import Autorization
+from business_logic.models.items import Items
+from business_logic.models.registration import Registration
 
 
 @app.route('/main')
@@ -14,22 +15,8 @@ def main_page():
     return jsonify(status="active", message="you are in index page")
 
 
-@app.route('/fetch')
-def Fetch():
-    hostname = socket.gethostname()
-    hostip = socket.gethostbyname(hostname)
-    return str(hostname), str(hostip)
-
-
-@app.route('/health', methods=['GET', 'POST'])
-def health():
-    hostname, hostip = Fetch()
-    return jsonify(HOSTNAME=hostname, HOSTIP=hostip)
-
-
-@app.route('/items', methods=['GET', 'POST'])
+@app.route('/items', methods=['GET','POST'])
 def items():
-    from business_logic.models.models import Items
     data1 = Items.query.all()
     data_list = []
     for i in data1:
@@ -51,15 +38,23 @@ def register():
     try:
         data = request.get_json()
         print(data)
-        from business_logic import db
-        from business_logic.models.models import Registration
+
         print(data.get('username'))
-        register_data = Registration(fullname=data.get('fullname'), username=data.get('username')
-                                     , email=data.get('email'), password=data.get('password'), ph_no=data.get('ph_no'))
-        print(register_data.email)
-        print(register_data.password)
-        print(register_data.ph_no)
-        print(register_data.fullname)
+
+        register_data = Registration(
+            fullname=data.get('fullname'),
+            username=data.get('username'),
+            email=data.get('email'),
+            password=data.get('password'),
+            ph_no=data.get('ph_no')
+        )
+
+        # print(register_data.email)
+        # print(register_data.password)
+        # print(register_data.ph_no)
+        # print(register_data.fullname)
+        print(register_data) #aaana ma tame je momdels ma f string ma lakhia a print thay
+
         db.session.add(register_data)
         db.session.commit()
         # record = Registration.query.filter_by(username=register_data.email)
@@ -81,7 +76,6 @@ def login():
 
     :return:
     """
-    from business_logic.models.models import Registration
     return_response = {"status": False, "message": "Error occurred"}
     try:
         if request.method == "POST":
@@ -104,18 +98,23 @@ def login():
                 return return_response
     except Exception as e1:
         return_response["message"] = "Exception occurred", str(e1)
-    return_response
-
-
-@app.route('/delete/<int:Sno>')
-def delete(Sno):
-    return_response = {"status": "True", "message": "Account Deleted"}
-    try:
-        from business_logic.models.models import Registration
-        del_user = Registration.query.filter_by(Sno=Sno).first()
-        db.session.delete(del_user)
-        db.session.commit()
-    except Exception as d1:
-        return_response = {"message": "Error Occured in Delete"}
     return return_response
 
+
+@app.route('/delete', methods=['DELETE'])
+def delete():
+    return_response = {"status": "True", "message": "Account Deleted"}
+    try:
+        data = request.get_json()
+        print(data)
+        del_user = Registration.query.filter_by(username=data).first()
+        db.session.delete(del_user)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        return_response = {"message": "Error Occurred in Delete"}
+    return return_response
+
+
+# @app.route('/delete', methods=['DELETE'])
+# def delete():
