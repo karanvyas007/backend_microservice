@@ -6,6 +6,7 @@ from flask import request
 from business_logic import app
 from business_logic import db
 from business_logic.authorization.authorize import Autorization
+from business_logic.models.cart import Cart
 from business_logic.models.items import Items
 from business_logic.models.registration import Registration
 
@@ -15,7 +16,7 @@ def main_page():
     return jsonify(status="active", message="you are in index page")
 
 
-@app.route('/items', methods=['GET','POST'])
+@app.route('/items', methods=['GET', 'POST'])
 def items():
     data1 = Items.query.all()
     data_list = []
@@ -31,8 +32,16 @@ def items():
 @app.route("/register", methods=['POST'])
 def register():
     """
+            fullname
+            username
+            email
+            password
+            ph_no
+            commit all the data into "Registration" table in database
+
     :return:
-    all the data
+    the valid response in json formate and also
+    return the token for token validation for login,
     """
     response = {"status": "False", "message": "Error occurred"}
     try:
@@ -53,7 +62,7 @@ def register():
         # print(register_data.password)
         # print(register_data.ph_no)
         # print(register_data.fullname)
-        print(register_data) #aaana ma tame je momdels ma f string ma lakhia a print thay
+        print(register_data)  # aaana ma tame je models ma f string ma lakhia a print thay
 
         db.session.add(register_data)
         db.session.commit()
@@ -116,5 +125,22 @@ def delete():
     return return_response
 
 
-# @app.route('/delete', methods=['DELETE'])
-# def delete():
+@app.route('/fooditems', methods=['POST'])
+def fooditems():
+    re_response = {"status": "False", "message": "please enter valid order"}
+    try:
+        if request.method == "POST":
+            data = request.get_json()
+            order_data = Cart(
+                order_detail=data.get('order_detail'),
+                total_amount=data.get('total_amount')
+            )
+            print(order_data)
+            db.session.add(order_data)
+            db.session.commit()
+            re_response = {"status": True, "message": "Your order has been confirmed..!!"}
+
+    except Exception as E3:
+        print(E3)
+        re_response = {"message": "Exception occurred"}
+    return re_response

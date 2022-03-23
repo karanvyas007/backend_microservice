@@ -1,6 +1,7 @@
 from flask_login import UserMixin
 
-from business_logic import db
+
+from business_logic import db, bcrypt
 
 
 class Registration(db.Model, UserMixin):
@@ -9,16 +10,17 @@ class Registration(db.Model, UserMixin):
     fullname = db.Column(db.String(50), nullable=False)
     username = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(45), nullable=False)
-    password = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.Text(50), nullable=False)
     ph_no = db.Column(db.BIGINT, nullable=False)
 
     def __init__(self, fullname, username, email, password, ph_no):
         self.fullname = fullname
         self.username = username
         self.email = email
-        self.password = password
+        #self.password = password
+        self.password = bcrypt.generate_password_hash(password).decode('UTF-8')
         self.ph_no = ph_no
 
-    def __repr__(self):
-        print(
-            f"Fullname: {self.fullname} \nUsername: {self.username} \nEmail: {self.email} \n Password: {'*' * len(self.password)} \nPhone Number: {self.ph_no}")
+    # def __repr__(self):
+    #     print(
+    #         f"Fullname: {self.fullname} \nUsername: {self.username} \nEmail: {self.email} \n Password: {'*' * len(self.password)} \nPhone Number: {self.ph_no}")
