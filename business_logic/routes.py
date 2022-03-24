@@ -18,6 +18,14 @@ def main_page():
 
 @app.route('/items', methods=['GET', 'POST'])
 def items():
+    """
+        get the alll items data from database and send it in json formate
+    :return:
+        detail about the food items
+        item_name , item_image, cat_id,
+        item_id , item_price in json dump
+    """
+
     data1 = Items.query.all()
     data_list = []
     for i in data1:
@@ -82,8 +90,11 @@ def register():
 # @jwt_required()
 def login():
     """
-
+        username
+        password
+        enter the valid token
     :return:
+        return valid response in json form
     """
     return_response = {"status": False, "message": "Error occurred"}
     try:
@@ -112,6 +123,12 @@ def login():
 
 @app.route('/delete', methods=['DELETE'])
 def delete():
+    """
+    permanent delete the account form the database
+    :return:
+    vadi response in json form
+
+    """
     return_response = {"status": "True", "message": "Account Deleted"}
     try:
         data = request.get_json()
@@ -127,6 +144,10 @@ def delete():
 
 @app.route('/fooditems', methods=['POST'])
 def fooditems():
+    """
+    it is implementing for the cart to order the food items
+    :return:
+    """
     re_response = {"status": "False", "message": "please enter valid order"}
     try:
         if request.method == "POST":
